@@ -68,14 +68,14 @@ def recolor(raw, color, keep_white=False):
 def set_title(raw, title):
 	if not title:
 		return raw
-	raw = re.sub(r"<title>.*?</title>", "", raw, flags=re.S)
+	raw = re.sub(r"<title>.*?</title>", "", raw, flags=re.DOTALL)
 	return re.sub(r"(<svg\b[^>]*>)", lambda m: m.group(1) + f"<title>{title}</title>", raw, count=1)
 
 
 def inner_markup(raw):
-	m = re.search(r"<svg\b[^>]*>(.*)</svg>", raw, re.S)
+	m = re.search(r"<svg\b[^>]*>(.*)</svg>", raw, re.DOTALL)
 	body = m.group(1) if m else raw
-	return re.sub(r"<title>.*?</title>", "", body, flags=re.S)
+	return re.sub(r"<title>.*?</title>", "", body, flags=re.DOTALL)
 
 
 def square_wrap(raw, root, padding=0.1, bg=None, radius=0.0, fg=None, symbol_scale=None, offset=0.0, title=None):
@@ -86,7 +86,7 @@ def square_wrap(raw, root, padding=0.1, bg=None, radius=0.0, fg=None, symbol_sca
 	w, h = bb[2] - bb[0], bb[3] - bb[1]
 	side = max(w, h)
 	canvas = 256.0
-	target = symbol_scale if symbol_scale else (1 - 2 * padding)
+	target = symbol_scale or (1 - 2 * padding)
 	s = round(canvas * target / side, 3)
 	tx = round((canvas - w * s) / 2 - bb[0] * s, 2)
 	ty = round((canvas - h * s) / 2 - bb[1] * s + offset * canvas, 2)
@@ -105,7 +105,7 @@ def square_wrap(raw, root, padding=0.1, bg=None, radius=0.0, fg=None, symbol_sca
 			"stroke-linejoin",
 			"style",
 		):
-			m = re.search(r'\s%s\s*=\s*"([^"]*)"' % re.escape(attr), root_tag.group(0))
+			m = re.search(rf'\s{re.escape(attr)}\s*=\s*"([^"]*)"', root_tag.group(0))
 			if m:
 				carried += f' {attr}="{m.group(1)}"'
 	tile = f'<rect width="256" height="256" rx="{canvas * radius:g}" fill="{bg}"/>' if bg else ""
@@ -190,7 +190,8 @@ def main():
 	if a.png:
 		for p in list(written):
 			for size in a.png:
-				txt = open(p, encoding="utf-8").read()
+				with open(p, encoding="utf-8") as fh:
+					txt = fh.read()
 				vb = re.search(r'viewBox\s*=\s*"[\d.\-]+[ ,]+[\d.\-]+[ ,]+([\d.]+)[ ,]+([\d.]+)"', txt)
 				ratio = float(vb.group(1)) / float(vb.group(2)) if vb else 1.0
 				w, h = (size, max(1, round(size / ratio))) if ratio >= 1 else (max(1, round(size * ratio)), size)

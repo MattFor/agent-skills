@@ -16,7 +16,6 @@ override a warning — but you should be able to say why.
 
 import argparse
 import json
-import math
 import os
 import re
 import sys
@@ -121,19 +120,22 @@ def audit(path, bg=None):
 		if not fill_w or fill_w == "url" or svglib.lightness(fill_w) <= 0.97:
 			continue
 		for _, bb_c, fill_c in boxes[:i]:
-			if fill_c and (fill_c == "url" or svglib.lightness(fill_c) <= 0.97):
-				if (
+			if (
+				fill_c
+				and (fill_c == "url" or svglib.lightness(fill_c) <= 0.97)
+				and (
 					bb_w[0] >= bb_c[0] - 0.5
 					and bb_w[1] >= bb_c[1] - 0.5
 					and bb_w[2] <= bb_c[2] + 0.5
 					and bb_w[3] <= bb_c[3] + 0.5
-				):
-					area_c = (bb_c[2] - bb_c[0]) * (bb_c[3] - bb_c[1])
-					if canvas_area and area_c >= 0.8 * canvas_area:
-						on_tile += 1
-					else:
-						knock += 1
-					break
+				)
+			):
+				area_c = (bb_c[2] - bb_c[0]) * (bb_c[3] - bb_c[1])
+				if canvas_area and area_c >= 0.8 * canvas_area:
+					on_tile += 1
+				else:
+					knock += 1
+				break
 	if on_tile and not knock:
 		add(
 			"INFO",
@@ -156,7 +158,7 @@ def audit(path, bg=None):
 			add(
 				"INFO",
 				"reversed-file",
-				f"All paint is white/near-white: this looks like a reversed version — test it with a "
+				"All paint is white/near-white: this looks like a reversed version — test it with a "
 				"dark --bg instead of " + bgc + ".",
 			)
 		elif bgc:
@@ -211,7 +213,7 @@ def audit(path, bg=None):
 	# near-miss angles
 	if size:
 		near = []
-		for ang, length, a, b in geo["lines"]:
+		for ang, length, a, _ in geo["lines"]:
 			if length < size * 0.04:
 				continue
 			closest = min(CLEAN_ANGLES, key=lambda c: abs(c - ang))

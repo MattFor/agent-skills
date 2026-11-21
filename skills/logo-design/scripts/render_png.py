@@ -68,7 +68,7 @@ def wrap_svg(svg_path, width, height, padding=0.0, bg=None):
 	with open(svg_path, encoding="utf-8", errors="ignore") as fh:
 		raw = fh.read()
 	raw = re.sub(r"<\?xml[^>]*\?>", "", raw)
-	raw = re.sub(r"<!DOCTYPE[^>]*>", "", raw, flags=re.I)
+	raw = re.sub(r"<!DOCTYPE[^>]*>", "", raw, flags=re.IGNORECASE)
 	m = re.search(r"<svg\b[^>]*>", raw)
 	if not m:
 		raise ValueError(f"not an SVG: {svg_path}")
@@ -170,7 +170,10 @@ def _stop(proc):
 		return
 	if os.name == "nt":
 		subprocess.run(
-			["taskkill", "/PID", str(proc.pid), "/T", "/F"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+			["taskkill", "/PID", str(proc.pid), "/T", "/F"],
+			check=False,
+			stdout=subprocess.DEVNULL,
+			stderr=subprocess.DEVNULL,
 		)
 	else:
 		proc.terminate()
@@ -231,10 +234,8 @@ def screenshot_html(html_path, png, w, h):
 			if proc.poll() is not None and os.path.exists(shot):
 				break
 			time.sleep(0.25)
-		try:
+		with contextlib.suppress(subprocess.TimeoutExpired):
 			proc.wait(timeout=0.5)  # it may exit by itself after --screenshot; otherwise stop the whole tree
-		except subprocess.TimeoutExpired:
-			pass
 		_stop(proc)
 		if not os.path.exists(shot):
 			raise RuntimeError("chrome produced no file")
@@ -290,10 +291,13 @@ def _qlmanage(svg_file, png, w, h, want_alpha=True):
 		iw = Image.open(white).convert("RGB")
 		ib = Image.open(black).convert("RGB").resize(iw.size)
 		if want_alpha:
-			flat = lambda im: list(im.get_flattened_data() if hasattr(im, "get_flattened_data") else im.getdata())
+
+			def flat(im):
+				return list(im.get_flattened_data() if hasattr(im, "get_flattened_data") else im.getdata())
+
 			wd, bd = flat(iw), flat(ib)
 			px = []
-			for (wr, wg, wb), (br, bg_, bb) in zip(wd, bd):
+			for (wr, wg, wb), (br, bg_, bb) in zip(wd, bd, strict=True):
 				a = 255 - max(wr - br, wg - bg_, wb - bb)
 				if a >= 255:
 					px.append((br, bg_, bb, 255))
@@ -349,7 +353,7 @@ def write_ico(png_paths, ico_path):
 	offset = 6 + 16 * len(blobs)
 	header = struct.pack("<HHH", 0, 1, len(blobs))
 	dirs = b""
-	for (w, h), blob in zip(entries, blobs):
+	for (w, h), blob in zip(entries, blobs, strict=True):
 		dirs += struct.pack("<BBBBHHII", w if w < 256 else 0, h if h < 256 else 0, 0, 0, 1, 32, len(blob), offset)
 		offset += len(blob)
 	with open(ico_path, "wb") as fh:
@@ -427,7 +431,8 @@ def main():
 			side = a.size or 512
 			w, h = side, side
 			if a.width or a.height:  # keep the SVG's aspect ratio
-				txt = open(f, encoding="utf-8", errors="ignore").read()
+				with open(f, encoding="utf-8", errors="ignore") as fh:
+					txt = fh.read()
 				vb = re.search(r'viewBox\s*=\s*"[\d.\-]+[ ,]+[\d.\-]+[ ,]+([\d.]+)[ ,]+([\d.]+)"', txt)
 				ratio = float(vb.group(1)) / float(vb.group(2)) if vb else 1.0
 				if a.width:

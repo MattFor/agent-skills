@@ -29,8 +29,9 @@ import svglib  # noqa: E402
 
 def embed(path, key, x, y, w, h):
 	"""Nested <svg> that fits the file into the box; ids are prefixed so several files can coexist."""
-	raw = open(path, encoding="utf-8", errors="ignore").read()
-	raw = re.sub(r"<\?xml[^>]*\?>|<!DOCTYPE[^>]*>", "", raw, flags=re.I)
+	with open(path, encoding="utf-8", errors="ignore") as fh:
+		raw = fh.read()
+	raw = re.sub(r"<\?xml[^>]*\?>|<!DOCTYPE[^>]*>", "", raw, flags=re.IGNORECASE)
 	raw = re.sub(r'\bid="([^"]+)"', lambda m: f'id="{key}-{m.group(1)}"', raw)
 	raw = re.sub(r"url\(#([^)]+)\)", lambda m: f"url(#{key}-{m.group(1)})", raw)
 	raw = re.sub(r'(xlink:href|href)="#([^"]+)"', lambda m: f'{m.group(1)}="#{key}-{m.group(2)}"', raw)
@@ -153,7 +154,7 @@ def main():
 		fh.write(doc)
 	print("wrote", svg_path)
 	png_path = base + ".png"
-	used = render_png.render(svg_path, png_path, W, int(round(H)))
+	used = render_png.render(svg_path, png_path, W, round(H))
 	if used:
 		print(f"wrote {png_path} via {used} — view it, show it to the user, then stop and ask")
 	else:

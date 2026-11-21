@@ -202,7 +202,7 @@ def text_on(bg):
 
 def mock_html(kind, c):
 	"""c: dict with sym, lock, avatar, color, cls, name, tag, nav."""
-	sym, lock, av, cls, name, tag = c["sym"], c["lock"], c["avatar"], c["cls"], c["name"], c["tag"]
+	lock, av, cls, name, tag = c["lock"], c["avatar"], c["cls"], c["name"], c["tag"]
 	stack = c.get("stacked") or lock  # stacked lockup for tall/boxy surfaces (bags, signs, badges) when provided
 	# Artwork on brand-colour tiles ("on_tile") and on the fixed near-black surfaces ("on_dark"): use the dedicated
 	# colour files when given (keeps multi-colour marks), otherwise force the mark to white.
@@ -444,7 +444,10 @@ def main():
 		stacked = uri(c["stacked"], base) if c.get("stacked") else None
 		dark = {}
 		if not grey:
-			pick = lambda *keys: next((c[k] for k in keys if c.get(k)), None)
+
+			def pick(*keys, c=c):
+				return next((c[k] for k in keys if c.get(k)), None)
+
 			if c.get("symbol_on_dark") and not c.get("symbol_on_tile"):
 				print(
 					f"note: concept {chr(65 + i)} has no symbol_on_tile; symbol_on_dark is used on the {tile} tiles "

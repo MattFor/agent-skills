@@ -94,7 +94,7 @@ def tile(inner, w, h, bg, extra=""):
 	return f'<div class="tile" style="width:{w}px;height:{h}px;background:{bg};{extra}">{inner}</div>'
 
 
-def concept_block(name, uri, aspect, brand, idx):
+def concept_block(name, uri, aspect, brand):
 	square = aspect is None or aspect <= 1.35
 	out = [f'<section class="concept"><h2>{html.escape(name)}</h2>']
 	# scale ladder
@@ -282,8 +282,8 @@ def main():
 	if len(items) > 1 or a.compare_only:
 		body.append(compare_block(items))
 	if not a.compare_only:
-		for i, (label, uri, aspect) in enumerate(items):
-			body.append(concept_block(label, uri, aspect, a.brand_color, i))
+		for label, uri, aspect in items:
+			body.append(concept_block(label, uri, aspect, a.brand_color))
 	if refs:
 		body.append(shelf_block(items, refs))
 	body.append("</div>")

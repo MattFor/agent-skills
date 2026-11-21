@@ -45,7 +45,7 @@ def matches(r, a):
 		return False
 	if a.industry and r.get("industry") != a.industry:
 		return False
-	if a.color and a.color not in (r.get("color_families", []) + [r.get("primary_family")]):
+	if a.color and a.color not in [*r.get("color_families", []), r.get("primary_family")]:
 		return False
 	if a.primary_color and r.get("primary_family") != a.primary_color:
 		return False
@@ -87,7 +87,7 @@ def summary(rows, total):
 	def block(title, counter, k=10):
 		print(title)
 		for key, cnt in counter.most_common(k):
-			print(f"  {str(key):24s} {cnt:4d}  {cnt / n * 100:5.1f}%")
+			print(f"  {key!s:24s} {cnt:4d}  {cnt / n * 100:5.1f}%")
 		print()
 
 	block("Mark types", Counter(r.get("mark_type") for r in rows))

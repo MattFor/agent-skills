@@ -115,7 +115,7 @@ def normalize_color(value):
 		vals = []
 		for comp in m.groups():
 			vals.append(round(float(comp[:-1]) * 2.55) if comp.endswith("%") else round(float(comp)))
-		return "#%02x%02x%02x" % tuple(max(0, min(255, c)) for c in vals)
+		return "#{:02x}{:02x}{:02x}".format(*(max(0, min(255, c)) for c in vals))
 	return None
 
 
@@ -141,11 +141,11 @@ def lightness(hx):
 
 def hue_family(hx):
 	r, g, b = [c / 255 for c in hex_to_rgb(hx)]
-	h, l, s = colorsys.rgb_to_hls(r, g, b)
-	if s < 0.15 or l < 0.08 or l > 0.95:
-		if l < 0.2:
+	h, lit, s = colorsys.rgb_to_hls(r, g, b)
+	if s < 0.15 or lit < 0.08 or lit > 0.95:
+		if lit < 0.2:
 			return "black"
-		if l > 0.9:
+		if lit > 0.9:
 			return "white"
 		return "gray"
 	d = h * 360
@@ -248,10 +248,7 @@ def parse_transform(s):
 		elif name == "rotate":
 			a = math.radians(v[0])
 			r = (math.cos(a), math.sin(a), -math.sin(a), math.cos(a), 0, 0)
-			if len(v) == 3:
-				t = mat_mul(mat_mul((1, 0, 0, 1, v[1], v[2]), r), (1, 0, 0, 1, -v[1], -v[2]))
-			else:
-				t = r
+			t = mat_mul(mat_mul((1, 0, 0, 1, v[1], v[2]), r), (1, 0, 0, 1, -v[1], -v[2])) if len(v) == 3 else r
 		elif name == "skewX":
 			t = (1, 0, math.tan(math.radians(v[0])), 1, 0, 0)
 		elif name == "skewY":
@@ -506,7 +503,10 @@ def union_bbox(a, b):
 
 def shape_to_subpaths(el):
 	tag = local(el.tag)
-	f = lambda k, d=0.0: float(re.sub(r"[^0-9.eE+-]", "", el.get(k, str(d))) or d)
+
+	def f(k, d=0.0):
+		return float(re.sub(r"[^0-9.eE+-]", "", el.get(k, str(d))) or d)
+
 	if tag == "path":
 		return parse_path(el.get("d", ""))
 	if tag == "rect":
@@ -529,7 +529,7 @@ def shape_to_subpaths(el):
 		return parse_path(f"M{cx - rx},{cy} A{rx},{ry} 0 1 0 {cx + rx},{cy} A{rx},{ry} 0 1 0 {cx - rx},{cy} Z")
 	if tag in ("polygon", "polyline"):
 		nums = [float(n) for n in NUM_RE.findall(el.get("points", ""))]
-		pts = list(zip(nums[0::2], nums[1::2]))
+		pts = list(zip(nums[0::2], nums[1::2], strict=False))
 		if not pts:
 			return []
 		d = "M" + " L".join(f"{x},{y}" for x, y in pts) + (" Z" if tag == "polygon" else "")

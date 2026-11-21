@@ -17,7 +17,6 @@ assets/library/classifications.json (schema: see references/library-guide.md), t
 import argparse
 import json
 import os
-import statistics
 import sys
 from collections import Counter
 
@@ -34,7 +33,7 @@ def analyse(path, names):
 	base = fname[:-4]
 	is_icon = base.endswith("-icon")
 	brand = base[:-5] if is_icon else base
-	raw, root = svglib.load_svg(path)
+	_, root = svglib.load_svg(path)
 	vb = svglib.view_box(root)
 	w, h = (vb[2], vb[3]) if vb else (None, None)
 	aspect = round(w / h, 3) if w and h else None
