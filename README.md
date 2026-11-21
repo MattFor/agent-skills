@@ -7,11 +7,11 @@ Agent skills for logo design, orchestrating other coding agents and a CLI projec
 
 ## Features
 
-| Skill                                         | What it does                                                                                                                                         |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Skill                                          | What it does                                                                                                                                                                                        |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`logo-design`](skills/logo-design/SKILL.md)   | Brief to production files: concepts, clean geometric SVG, testing at 16 px and in one colour, presentation boards, export variants, and a searchable library of 1,400+ classified real-world logos. |
-| [`orchestrator`](skills/orchestrator/SKILL.md) | Hands the work to other coding agents on the machine (Codex, Cursor, Copilot, local Ollama models, headless Claude Code), then verifies what they did. |
-| [`tracker`](skills/tracker/SKILL.md)           | Reads and updates a [simple-project-tracker](https://github.com/MattFor/simple-project-tracker) project list and todo list.                            |
+| [`orchestrator`](skills/orchestrator/SKILL.md) | Hands the work to other coding agents on the machine (Codex, Cursor, Copilot, local Ollama models, headless Claude Code), then verifies what they did.                                              |
+| [`tracker`](skills/tracker/SKILL.md)           | Reads and updates a [simple-project-tracker](https://github.com/MattFor/simple-project-tracker) project list and todo list.                                                                         |
 
 Each skill is a plain [`SKILL.md`](https://agentskills.io) folder, so any agent that reads skills can use it. The
 scripts are dependency-free Python 3 and POSIX shell.

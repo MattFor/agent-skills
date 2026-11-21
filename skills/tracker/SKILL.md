@@ -9,31 +9,31 @@ description: Read and update the user's project tracker and todo list through th
 
 ## Look
 
-| Want | Command |
-|---|---|
-| All projects | `tracker list all` (bare `tracker` and every `list` apply `display.filter`, which hides some statuses; `tracker settings get filter` shows which) |
-| Search projects | `tracker list <search>` · by status: `tracker <status>` (e.g. `tracker stable`), since `tracker list s:<status>` finds nothing for a filtered status |
-| One project in detail | `tracker <project> check` |
-| Statuses in use | `tracker status` |
-| The whole todo list | `tracker todo` |
-| Open todos only | `tracker todo list s:todo` |
-| Todos about something | `tracker todo <word>` (matches names), or read the full list |
-| Totals | `tracker stats` |
-| How a command works | `tracker help <command>` (topics: `selection`, `statuses`, `todo list`) |
+| Want                  | Command                                                                                                                                              |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| All projects          | `tracker list all` (bare `tracker` and every `list` apply `display.filter`, which hides some statuses; `tracker settings get filter` shows which)    |
+| Search projects       | `tracker list <search>` · by status: `tracker <status>` (e.g. `tracker stable`), since `tracker list s:<status>` finds nothing for a filtered status |
+| One project in detail | `tracker <project> check`                                                                                                                            |
+| Statuses in use       | `tracker status`                                                                                                                                     |
+| The whole todo list   | `tracker todo`                                                                                                                                       |
+| Open todos only       | `tracker todo list s:todo`                                                                                                                           |
+| Todos about something | `tracker todo <word>` (matches names), or read the full list                                                                                         |
+| Totals                | `tracker stats`                                                                                                                                      |
+| How a command works   | `tracker help <command>` (topics: `selection`, `statuses`, `todo list`)                                                                              |
 
 ## Change
 
-| Want | Command |
-|---|---|
-| Add a todo | `tracker todo add <what to do>` · with fields: `tracker todo add <name> s <status> n <note>` |
-| Finish / reopen | `tracker todo <n> done` · `tracker todo <n> reopen` |
-| Note on a todo | `tracker todo <n> note <text>` (`@project` links a project) |
-| Rename / status | `tracker todo <n> rename <text>` · `tracker todo <n> status <value>` |
-| Remove / clear finished | `tracker todo remove <n>` · `tracker todo clear` |
-| Track / stop tracking | `tracker add <path> [status] [note]` · `tracker remove <project>` (files untouched) |
-| Project note / status | `tracker <project> note <text>` · `tracker <project> status <value>` · all of one status: `tracker status s:<old> <new>` |
-| Duplicate or moved entries | `tracker doctor` reports, `tracker fix` repairs (one undoable change) |
-| Take back the last change | `tracker todo undo` for todos · `tracker undo` for projects (separate histories) |
+| Want                       | Command                                                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Add a todo                 | `tracker todo add <what to do>` · with fields: `tracker todo add <name> s <status> n <note>`                             |
+| Finish / reopen            | `tracker todo <n> done` · `tracker todo <n> reopen`                                                                      |
+| Note on a todo             | `tracker todo <n> note <text>` (`@project` links a project)                                                              |
+| Rename / status            | `tracker todo <n> rename <text>` · `tracker todo <n> status <value>`                                                     |
+| Remove / clear finished    | `tracker todo remove <n>` · `tracker todo clear`                                                                         |
+| Track / stop tracking      | `tracker add <path> [status] [note]` · `tracker remove <project>` (files untouched)                                      |
+| Project note / status      | `tracker <project> note <text>` · `tracker <project> status <value>` · all of one status: `tracker status s:<old> <new>` |
+| Duplicate or moved entries | `tracker doctor` reports, `tracker fix` repairs (one undoable change)                                                    |
+| Take back the last change  | `tracker todo undo` for todos · `tracker undo` for projects (separate histories)                                         |
 
 Projects and todos are picked by number (the row number from the last listing), name or part of it, a range (`3-5`, `2+3`), or `s:<status>`. When a name matches several, the error lists them: pick with `:<row>` or the permanent `i:<id>`.
 
