@@ -32,6 +32,7 @@ Top-level "tile_color" overrides brand_color for the tiles (e.g. a dark ink so a
 Missing ones fall back sensibly
 (a wordmark-only concept can provide just "lockup" plus an "avatar" for small uses).
 """
+
 import argparse
 import datetime
 import html
@@ -46,31 +47,62 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import svglib  # noqa: E402
 
 PRESETS = {
-    "software": ["readme", "app-icon", "website", "terminal", "sticker", "social"],
-    "consumer-app": ["app-icon", "website", "social", "favicon-tab", "sticker", "business-card"],
-    "coffee": ["cup", "bag", "signage", "business-card", "social", "tote"],
-    "food": ["bag", "cup", "signage", "box", "social", "business-card"],
-    "retail": ["shopping-bag", "signage", "website", "box", "social", "tote"],
-    "fashion": ["shopping-bag", "tshirt", "signage", "social", "business-card", "tote"],
-    "services": ["business-card", "website", "signage", "social", "badge", "app-icon"],
-    "event": ["badge", "tshirt", "website", "social", "sticker", "signage"],
-    "education": ["website", "badge", "tshirt", "social", "business-card", "app-icon"],
-    "health": ["website", "app-icon", "signage", "business-card", "social", "box"],
-    "finance": ["payment-card", "app-icon", "website", "social", "business-card", "favicon-tab"],
-    "saas": ["website", "favicon-tab", "app-icon", "social", "sticker", "business-card"],
+	"software": ["readme", "app-icon", "website", "terminal", "sticker", "social"],
+	"consumer-app": ["app-icon", "website", "social", "favicon-tab", "sticker", "business-card"],
+	"coffee": ["cup", "bag", "signage", "business-card", "social", "tote"],
+	"food": ["bag", "cup", "signage", "box", "social", "business-card"],
+	"retail": ["shopping-bag", "signage", "website", "box", "social", "tote"],
+	"fashion": ["shopping-bag", "tshirt", "signage", "social", "business-card", "tote"],
+	"services": ["business-card", "website", "signage", "social", "badge", "app-icon"],
+	"event": ["badge", "tshirt", "website", "social", "sticker", "signage"],
+	"education": ["website", "badge", "tshirt", "social", "business-card", "app-icon"],
+	"health": ["website", "app-icon", "signage", "business-card", "social", "box"],
+	"finance": ["payment-card", "app-icon", "website", "social", "business-card", "favicon-tab"],
+	"saas": ["website", "favicon-tab", "app-icon", "social", "sticker", "business-card"],
 }
 ALIASES = {
-    "fintech": "finance", "bank": "finance", "banking": "finance", "payments": "finance", "insurance": "finance",
-    "accounting": "finance", "b2b-saas": "saas", "startup": "saas",
-    "developer": "software", "developer-tools": "software", "devtool": "software", "tech": "software",
-    "open-source": "software", "ai": "software", "app": "consumer-app", "mobile": "consumer-app", "cafe": "coffee",
-    "café": "coffee", "roaster": "coffee", "restaurant": "food", "bakery": "food", "beverage": "food", "drink": "food",
-    "ecommerce": "retail", "shop": "retail", "store": "retail", "agency": "services", "consulting": "services",
-    "legal": "services", "conference": "event", "festival": "event", "school": "education",
-    "university": "education", "clinic": "health", "wellness": "health",
+	"fintech": "finance",
+	"bank": "finance",
+	"banking": "finance",
+	"payments": "finance",
+	"insurance": "finance",
+	"accounting": "finance",
+	"b2b-saas": "saas",
+	"startup": "saas",
+	"developer": "software",
+	"developer-tools": "software",
+	"devtool": "software",
+	"tech": "software",
+	"open-source": "software",
+	"ai": "software",
+	"app": "consumer-app",
+	"mobile": "consumer-app",
+	"cafe": "coffee",
+	"café": "coffee",
+	"roaster": "coffee",
+	"restaurant": "food",
+	"bakery": "food",
+	"beverage": "food",
+	"drink": "food",
+	"ecommerce": "retail",
+	"shop": "retail",
+	"store": "retail",
+	"agency": "services",
+	"consulting": "services",
+	"legal": "services",
+	"conference": "event",
+	"festival": "event",
+	"school": "education",
+	"university": "education",
+	"clinic": "health",
+	"wellness": "health",
 }
-DEFAULT_NAV = {"software": ["Docs", "Pricing", "GitHub"], "coffee": ["Shop", "Cafés", "Story"],
-               "food": ["Menu", "Order", "About"], "retail": ["Shop", "New in", "Stores"]}
+DEFAULT_NAV = {
+	"software": ["Docs", "Pricing", "GitHub"],
+	"coffee": ["Shop", "Cafés", "Story"],
+	"food": ["Menu", "Order", "About"],
+	"retail": ["Shop", "New in", "Stores"],
+}
 
 CSS = """
 :root{--ink:#161616;--muted:#6b6b6b;--line:#e6e6e2;--paper:#f7f7f4}
@@ -150,260 +182,363 @@ img.g{filter:grayscale(1)}img.w{filter:brightness(0) invert(1)}img.k{filter:brig
 
 
 def uri(path, base):
-    p = path if os.path.isabs(path) else os.path.join(base, path)
-    return svglib.svg_data_uri(p)
+	p = path if os.path.isabs(path) else os.path.join(base, path)
+	return svglib.svg_data_uri(p)
 
 
 def text_on(bg):
-    """White text while it keeps 3:1 on the background, near-black below that (white if the colour can't be parsed)."""
-    h = (bg or "").strip().lstrip("#")
-    if len(h) == 3:
-        h = "".join(ch * 2 for ch in h)
-    try:
-        rgb = [int(h[i:i + 2], 16) / 255 for i in (0, 2, 4)]
-    except ValueError:
-        return "#fff"
-    lin = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in rgb]
-    lum = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
-    return "#fff" if 1.05 / (lum + 0.05) >= 3 else "#161616"
+	"""White text while it keeps 3:1 on the background, near-black below that (white if the colour can't be parsed)."""
+	h = (bg or "").strip().lstrip("#")
+	if len(h) == 3:
+		h = "".join(ch * 2 for ch in h)
+	try:
+		rgb = [int(h[i : i + 2], 16) / 255 for i in (0, 2, 4)]
+	except ValueError:
+		return "#fff"
+	lin = [v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in rgb]
+	lum = 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+	return "#fff" if 1.05 / (lum + 0.05) >= 3 else "#161616"
 
 
 def mock_html(kind, c):
-    """c: dict with sym, lock, avatar, color, cls, name, tag, nav."""
-    sym, lock, av, cls, name, tag = c["sym"], c["lock"], c["avatar"], c["cls"], c["name"], c["tag"]
-    stack = c.get("stacked") or lock   # stacked lockup for tall/boxy surfaces (bags, signs, badges) when provided
-    # Artwork on brand-colour tiles ("on_tile") and on the fixed near-black surfaces ("on_dark"): use the dedicated
-    # colour files when given (keeps multi-colour marks), otherwise force the mark to white.
-    avt, wat = (c["avatar_tile"], "") if c.get("avatar_tile") else (av, "w")
-    avd, wav = (c["avatar_dark"], "") if c.get("avatar_dark") else (av, "w")
-    skt, wst = (c["stack_tile"], "") if c.get("stack_tile") else (stack, "w")
-    lkd, wlk = (c["lock_dark"], "") if c.get("lock_dark") else (lock, "w")
-    skd, wsk = ((c.get("stack_dark") or c["lock_dark"]), "") if (c.get("stack_dark") or c.get("lock_dark")) else (stack, "w")
-    tile = c["tile"]
-    # e-mail / social handle / domain: plain ASCII letters and digits ("Marlow & Finch" -> "marlowfinch")
-    handle = re.sub(r"[^a-z0-9]", "", unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower())
-    n = html.escape(name)
-    if kind == "business-card":
-        return (f'<div class="m" style="background:#d9d4cb"><div class="bc"><img class="{cls}" src="{lock}" style="max-height:34px;max-width:170px">'
-                f'<div class="t"><b>Alex Morgan</b><br>Founder<br>alex@{handle}.com</div></div>'
-                f'<div class="bc2" style="background:{tile}"><img class="{wat}" src="{avt}" style="max-height:60px;max-width:120px"></div><span class="lbl">Business cards</span></div>')
-    if kind == "app-icon":
-        cells = "".join('<div class="ai"></div>' for _ in range(4))
-        icon = (f'<div class="ai" style="background:{tile};display:flex;align-items:center;justify-content:center">'
-                f'<img class="{wat}" src="{avt}" style="max-height:19px;max-width:21px"></div>')
-        # the home screen shows the icon among others; the large tile beside it shows it at store size
-        big = (f'<div class="bigapp"><div class="bi" style="background:{tile}"><img class="{wat}" src="{avt}" '
-               f'style="max-height:62px;max-width:70px"></div>{n}</div>')
-        return (f'<div class="m" style="background:#eef0f2"><div class="phone"><div class="screen">{cells}{icon}'
-                + "".join('<div class="ai"></div>' for _ in range(7)) + f'</div></div>{big}<span class="lbl">App icon</span></div>')
-    if kind == "website":
-        nav = "".join(f"<span>{html.escape(x)}</span>" for x in c["nav"])
-        return (f'<div class="m" style="background:#e4e8ec"><div class="web"><div class="bar"><i></i><i></i><i></i></div>'
-                f'<div class="nav"><img class="{cls}" src="{lock}" style="max-height:20px;max-width:110px"><span style="flex:1"></span>{nav}</div>'
-                f'<div class="hero2"><b>{html.escape(tag) or n}</b><span></span><span style="width:60%"></span></div></div><span class="lbl">Website</span></div>')
-    if kind == "signage":
-        return (f'<div class="m" style="background:#b9bcc0"><div class="sign"><div class="board" style="background:#161616">'
-                f'<img class="{wsk}" src="{skd}" style="max-height:{58 if stack != lock else 34}px;max-width:190px"></div><div class="door"></div></div><span class="lbl">Storefront / signage</span></div>')
-    if kind == "tote":
-        return (f'<div class="m" style="background:#cfc6b6"><div class="tote"><img class="k" src="{av}" style="max-height:80px;max-width:110px;opacity:.88"></div>'
-                '<span class="lbl">Tote bag</span></div>')
-    if kind == "social":
-        return (f'<div class="m" style="background:#e9e9ef"><div class="social"><div class="cover" style="background:{tile}"></div>'
-                f'<div class="av"><img class="{cls}" src="{av}" style="max-height:42px;max-width:50px"></div>'
-                f'<div class="meta"><b>{n}</b>@{handle} · {html.escape(tag)}</div></div><span class="lbl">Social profile</span></div>')
-    if kind == "cup":
-        return (f'<div class="m" style="background:#d8cfc2"><div class="cup"><div class="lid"></div><div class="body"></div>'
-                f'<div class="sleeve" style="background:{tile}"><img class="{wat}" src="{avt}" style="max-height:44px;max-width:80px"></div></div>'
-                '<span class="lbl">Paper cup</span></div>')
-    if kind == "bag":
-        return (f'<div class="m" style="background:#cdbfa9"><div class="bag"><div class="label"><img class="{cls}" src="{av}" style="max-height:60px;max-width:84px"></div>'
-                f'<img class="{cls}" src="{lock}" style="max-height:18px;max-width:120px"><div class="t">{html.escape(tag)[:40]}</div></div>'
-                '<span class="lbl">Packaging bag</span></div>')
-    if kind == "shopping-bag":
-        return (f'<div class="m" style="background:#e3ded6"><div class="sbag" style="background:{tile}"><img class="{wst}" src="{skt}" style="max-height:{96 if stack != lock else 40}px;max-width:130px"></div>'
-                '<span class="lbl">Shopping bag</span></div>')
-    if kind == "box":
-        return (f'<div class="m" style="background:#d6d9dc"><div class="box"><img class="{cls}" src="{lock}" style="max-height:44px;max-width:160px"></div>'
-                '<span class="lbl">Packaging</span></div>')
-    if kind == "readme":
-        return (f'<div class="m" style="background:#e6e8eb"><div class="readme"><div class="rh"><img class="{wlk}" src="{lkd}" style="max-height:26px;max-width:180px"></div>'
-                f'<div>{html.escape(tag) or n}</div><div class="badges"><i></i><i></i><i></i></div><div class="ln"></div><div class="ln" style="width:70%"></div>'
-                '<div class="ln" style="width:85%"></div></div><span class="lbl">GitHub README</span></div>')
-    if kind == "terminal":
-        return (f'<div class="m" style="background:#cfd3d8"><div class="term"><div class="tb"><i></i><i></i><i></i></div>'
-                f'<div class="tbody"><img class="{wav}" src="{avd}" style="max-height:42px;max-width:42px"><div>$ {handle} --version<br>'
-                f'<span style="color:#6a9955">{n} 1.0.0</span><br>$ {handle} search "error"</div></div></div><span class="lbl">Terminal</span></div>')
-    if kind == "sticker":
-        return (f'<div class="m" style="background:#e1e3e6"><div class="sticker"><div class="s"><img class="{cls}" src="{av}" style="max-height:58px;max-width:66px"></div></div>'
-                '<span class="lbl">Laptop sticker</span></div>')
-    if kind == "tshirt":
-        shirt = ('<svg viewBox="0 0 210 220"><path d="M60 10 L20 35 L0 80 L35 95 L45 75 L45 215 L165 215 L165 75 L175 95 L210 80 '
-                 f'L190 35 L150 10 Q105 40 60 10 Z" fill="{tile}"/></svg>')
-        return (f'<div class="m" style="background:#e4e1dc"><div class="shirt">{shirt}<img class="{wat}" src="{avt}" style="position:relative;max-height:56px;max-width:70px;margin-top:10px"></div>'
-                '<span class="lbl">T-shirt</span></div>')
-    if kind == "badge":
-        return (f'<div class="m" style="background:#d9dde2"><div class="badge"><div class="hole"></div><img class="{cls}" src="{stack}" style="max-height:{70 if stack != lock else 34}px;max-width:130px">'
-                '<div class="nm">Alex Morgan</div><div class="rl">Speaker</div></div><span class="lbl">Event badge</span></div>')
-    if kind == "payment-card":
-        return (f'<div class="m" style="background:#dfe3e8"><div class="pcard" style="background:{tile};color:{text_on(tile)}">'
-                f'<img class="{wat}" src="{avt}" style="position:absolute;left:22px;top:20px;max-height:34px;max-width:70px">'
-                f'<div class="chip"></div><div class="num">•••• •••• •••• 4821</div>'
-                f'<div class="holder">ALEX MORGAN</div><div class="brandline">{n}</div></div>'
-                '<span class="lbl">Payment card</span></div>')
-    if kind == "favicon-tab":
-        return (f'<div class="m" style="background:#eceff1"><div class="tabbar"><div class="tab"><img class="{cls}" src="{av}" style="width:16px;height:16px;object-fit:contain">'
-                f'{n} — Home<span style="margin-left:auto">✕</span></div><div class="addr">https://{handle}.com</div></div><span class="lbl">Browser tab</span></div>')
-    raise KeyError(kind)
+	"""c: dict with sym, lock, avatar, color, cls, name, tag, nav."""
+	sym, lock, av, cls, name, tag = c["sym"], c["lock"], c["avatar"], c["cls"], c["name"], c["tag"]
+	stack = c.get("stacked") or lock  # stacked lockup for tall/boxy surfaces (bags, signs, badges) when provided
+	# Artwork on brand-colour tiles ("on_tile") and on the fixed near-black surfaces ("on_dark"): use the dedicated
+	# colour files when given (keeps multi-colour marks), otherwise force the mark to white.
+	avt, wat = (c["avatar_tile"], "") if c.get("avatar_tile") else (av, "w")
+	avd, wav = (c["avatar_dark"], "") if c.get("avatar_dark") else (av, "w")
+	skt, wst = (c["stack_tile"], "") if c.get("stack_tile") else (stack, "w")
+	lkd, wlk = (c["lock_dark"], "") if c.get("lock_dark") else (lock, "w")
+	skd, wsk = (
+		((c.get("stack_dark") or c["lock_dark"]), "") if (c.get("stack_dark") or c.get("lock_dark")) else (stack, "w")
+	)
+	tile = c["tile"]
+	# e-mail / social handle / domain: plain ASCII letters and digits ("Marlow & Finch" -> "marlowfinch")
+	handle = re.sub(r"[^a-z0-9]", "", unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode().lower())
+	n = html.escape(name)
+	if kind == "business-card":
+		return (
+			f'<div class="m" style="background:#d9d4cb"><div class="bc"><img class="{cls}" src="{lock}" style="max-height:34px;max-width:170px">'
+			f'<div class="t"><b>Alex Morgan</b><br>Founder<br>alex@{handle}.com</div></div>'
+			f'<div class="bc2" style="background:{tile}"><img class="{wat}" src="{avt}" style="max-height:60px;max-width:120px"></div><span class="lbl">Business cards</span></div>'
+		)
+	if kind == "app-icon":
+		cells = "".join('<div class="ai"></div>' for _ in range(4))
+		icon = (
+			f'<div class="ai" style="background:{tile};display:flex;align-items:center;justify-content:center">'
+			f'<img class="{wat}" src="{avt}" style="max-height:19px;max-width:21px"></div>'
+		)
+		# the home screen shows the icon among others; the large tile beside it shows it at store size
+		big = (
+			f'<div class="bigapp"><div class="bi" style="background:{tile}"><img class="{wat}" src="{avt}" '
+			f'style="max-height:62px;max-width:70px"></div>{n}</div>'
+		)
+		return (
+			f'<div class="m" style="background:#eef0f2"><div class="phone"><div class="screen">{cells}{icon}'
+			+ "".join('<div class="ai"></div>' for _ in range(7))
+			+ f'</div></div>{big}<span class="lbl">App icon</span></div>'
+		)
+	if kind == "website":
+		nav = "".join(f"<span>{html.escape(x)}</span>" for x in c["nav"])
+		return (
+			f'<div class="m" style="background:#e4e8ec"><div class="web"><div class="bar"><i></i><i></i><i></i></div>'
+			f'<div class="nav"><img class="{cls}" src="{lock}" style="max-height:20px;max-width:110px"><span style="flex:1"></span>{nav}</div>'
+			f'<div class="hero2"><b>{html.escape(tag) or n}</b><span></span><span style="width:60%"></span></div></div><span class="lbl">Website</span></div>'
+		)
+	if kind == "signage":
+		return (
+			f'<div class="m" style="background:#b9bcc0"><div class="sign"><div class="board" style="background:#161616">'
+			f'<img class="{wsk}" src="{skd}" style="max-height:{58 if stack != lock else 34}px;max-width:190px"></div><div class="door"></div></div><span class="lbl">Storefront / signage</span></div>'
+		)
+	if kind == "tote":
+		return (
+			f'<div class="m" style="background:#cfc6b6"><div class="tote"><img class="k" src="{av}" style="max-height:80px;max-width:110px;opacity:.88"></div>'
+			'<span class="lbl">Tote bag</span></div>'
+		)
+	if kind == "social":
+		return (
+			f'<div class="m" style="background:#e9e9ef"><div class="social"><div class="cover" style="background:{tile}"></div>'
+			f'<div class="av"><img class="{cls}" src="{av}" style="max-height:42px;max-width:50px"></div>'
+			f'<div class="meta"><b>{n}</b>@{handle} · {html.escape(tag)}</div></div><span class="lbl">Social profile</span></div>'
+		)
+	if kind == "cup":
+		return (
+			f'<div class="m" style="background:#d8cfc2"><div class="cup"><div class="lid"></div><div class="body"></div>'
+			f'<div class="sleeve" style="background:{tile}"><img class="{wat}" src="{avt}" style="max-height:44px;max-width:80px"></div></div>'
+			'<span class="lbl">Paper cup</span></div>'
+		)
+	if kind == "bag":
+		return (
+			f'<div class="m" style="background:#cdbfa9"><div class="bag"><div class="label"><img class="{cls}" src="{av}" style="max-height:60px;max-width:84px"></div>'
+			f'<img class="{cls}" src="{lock}" style="max-height:18px;max-width:120px"><div class="t">{html.escape(tag)[:40]}</div></div>'
+			'<span class="lbl">Packaging bag</span></div>'
+		)
+	if kind == "shopping-bag":
+		return (
+			f'<div class="m" style="background:#e3ded6"><div class="sbag" style="background:{tile}"><img class="{wst}" src="{skt}" style="max-height:{96 if stack != lock else 40}px;max-width:130px"></div>'
+			'<span class="lbl">Shopping bag</span></div>'
+		)
+	if kind == "box":
+		return (
+			f'<div class="m" style="background:#d6d9dc"><div class="box"><img class="{cls}" src="{lock}" style="max-height:44px;max-width:160px"></div>'
+			'<span class="lbl">Packaging</span></div>'
+		)
+	if kind == "readme":
+		return (
+			f'<div class="m" style="background:#e6e8eb"><div class="readme"><div class="rh"><img class="{wlk}" src="{lkd}" style="max-height:26px;max-width:180px"></div>'
+			f'<div>{html.escape(tag) or n}</div><div class="badges"><i></i><i></i><i></i></div><div class="ln"></div><div class="ln" style="width:70%"></div>'
+			'<div class="ln" style="width:85%"></div></div><span class="lbl">GitHub README</span></div>'
+		)
+	if kind == "terminal":
+		return (
+			f'<div class="m" style="background:#cfd3d8"><div class="term"><div class="tb"><i></i><i></i><i></i></div>'
+			f'<div class="tbody"><img class="{wav}" src="{avd}" style="max-height:42px;max-width:42px"><div>$ {handle} --version<br>'
+			f'<span style="color:#6a9955">{n} 1.0.0</span><br>$ {handle} search "error"</div></div></div><span class="lbl">Terminal</span></div>'
+		)
+	if kind == "sticker":
+		return (
+			f'<div class="m" style="background:#e1e3e6"><div class="sticker"><div class="s"><img class="{cls}" src="{av}" style="max-height:58px;max-width:66px"></div></div>'
+			'<span class="lbl">Laptop sticker</span></div>'
+		)
+	if kind == "tshirt":
+		shirt = (
+			'<svg viewBox="0 0 210 220"><path d="M60 10 L20 35 L0 80 L35 95 L45 75 L45 215 L165 215 L165 75 L175 95 L210 80 '
+			f'L190 35 L150 10 Q105 40 60 10 Z" fill="{tile}"/></svg>'
+		)
+		return (
+			f'<div class="m" style="background:#e4e1dc"><div class="shirt">{shirt}<img class="{wat}" src="{avt}" style="position:relative;max-height:56px;max-width:70px;margin-top:10px"></div>'
+			'<span class="lbl">T-shirt</span></div>'
+		)
+	if kind == "badge":
+		return (
+			f'<div class="m" style="background:#d9dde2"><div class="badge"><div class="hole"></div><img class="{cls}" src="{stack}" style="max-height:{70 if stack != lock else 34}px;max-width:130px">'
+			'<div class="nm">Alex Morgan</div><div class="rl">Speaker</div></div><span class="lbl">Event badge</span></div>'
+		)
+	if kind == "payment-card":
+		return (
+			f'<div class="m" style="background:#dfe3e8"><div class="pcard" style="background:{tile};color:{text_on(tile)}">'
+			f'<img class="{wat}" src="{avt}" style="position:absolute;left:22px;top:20px;max-height:34px;max-width:70px">'
+			f'<div class="chip"></div><div class="num">•••• •••• •••• 4821</div>'
+			f'<div class="holder">ALEX MORGAN</div><div class="brandline">{n}</div></div>'
+			'<span class="lbl">Payment card</span></div>'
+		)
+	if kind == "favicon-tab":
+		return (
+			f'<div class="m" style="background:#eceff1"><div class="tabbar"><div class="tab"><img class="{cls}" src="{av}" style="width:16px;height:16px;object-fit:contain">'
+			f'{n} — Home<span style="margin-left:auto">✕</span></div><div class="addr">https://{handle}.com</div></div><span class="lbl">Browser tab</span></div>'
+		)
+	raise KeyError(kind)
 
 
-ALL_MOCKUPS = ["payment-card", "business-card", "app-icon", "website", "signage", "tote", "social", "cup", "bag", "shopping-bag", "box",
-               "readme", "terminal", "sticker", "tshirt", "badge", "favicon-tab"]
+ALL_MOCKUPS = [
+	"payment-card",
+	"business-card",
+	"app-icon",
+	"website",
+	"signage",
+	"tote",
+	"social",
+	"cup",
+	"bag",
+	"shopping-bag",
+	"box",
+	"readme",
+	"terminal",
+	"sticker",
+	"tshirt",
+	"badge",
+	"favicon-tab",
+]
 
 
 def pick_mockups(spec):
-    if spec.get("mockups"):
-        chosen = [m for m in spec["mockups"] if m in ALL_MOCKUPS]
-    else:
-        ind = str(spec.get("industry", "")).lower()
-        key = ind if ind in PRESETS else ALIASES.get(ind, ind)   # a real preset name always wins over an alias
-        chosen = PRESETS.get(key, PRESETS["services"])
-    return chosen[:6] if len(chosen) >= 6 else (chosen + [m for m in PRESETS["services"] if m not in chosen])[:6]
+	if spec.get("mockups"):
+		chosen = [m for m in spec["mockups"] if m in ALL_MOCKUPS]
+	else:
+		ind = str(spec.get("industry", "")).lower()
+		key = ind if ind in PRESETS else ALIASES.get(ind, ind)  # a real preset name always wins over an alias
+		chosen = PRESETS.get(key, PRESETS["services"])
+	return chosen[:6] if len(chosen) >= 6 else (chosen + [m for m in PRESETS["services"] if m not in chosen])[:6]
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("spec", nargs="?")
-    ap.add_argument("-o", "--out", default="presentation.html")
-    ap.add_argument("--list-mockups", action="store_true")
-    ap.add_argument("--png-dir", help="also export every slide as slide-NN.png (needs Chrome/Chromium)")
-    a = ap.parse_args()
-    if a.list_mockups:
-        print("mockups:", ", ".join(ALL_MOCKUPS))
-        for k, v in PRESETS.items():
-            print(f"  industry '{k}': {', '.join(v)}")
-        print("  aliases:", ", ".join(f"{k}→{v}" for k, v in ALIASES.items()))
-        return
-    if not a.spec:
-        ap.error("spec.json required")
-    with open(a.spec, encoding="utf-8") as fh:
-        spec = json.load(fh)
-    base = os.path.dirname(os.path.abspath(a.spec))
-    brand = spec.get("brand", "Brand")
-    color = spec.get("brand_color", "#161616")
-    grey = spec.get("greyscale", True)
-    final = spec.get("final", False)
-    cls = "g" if grey else ""
-    tile = "#161616" if grey else (spec.get("tile_color") or color)
-    date = spec.get("date") or datetime.date.today().isoformat()
-    designer = spec.get("designer", "")
-    concepts = spec.get("concepts", [])
-    ind = str(spec.get("industry", "")).lower()
-    nav = spec.get("nav") or DEFAULT_NAV.get(ALIASES.get(ind, ind), ["Products", "About", "Contact"])
-    mockups = pick_mockups(spec)
-    deck_title = spec.get("deck_title", "final identity" if final else "identity concepts")
+	ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+	ap.add_argument("spec", nargs="?")
+	ap.add_argument("-o", "--out", default="presentation.html")
+	ap.add_argument("--list-mockups", action="store_true")
+	ap.add_argument("--png-dir", help="also export every slide as slide-NN.png (needs Chrome/Chromium)")
+	a = ap.parse_args()
+	if a.list_mockups:
+		print("mockups:", ", ".join(ALL_MOCKUPS))
+		for k, v in PRESETS.items():
+			print(f"  industry '{k}': {', '.join(v)}")
+		print("  aliases:", ", ".join(f"{k}→{v}" for k, v in ALIASES.items()))
+		return
+	if not a.spec:
+		ap.error("spec.json required")
+	with open(a.spec, encoding="utf-8") as fh:
+		spec = json.load(fh)
+	base = os.path.dirname(os.path.abspath(a.spec))
+	brand = spec.get("brand", "Brand")
+	color = spec.get("brand_color", "#161616")
+	grey = spec.get("greyscale", True)
+	final = spec.get("final", False)
+	cls = "g" if grey else ""
+	tile = "#161616" if grey else (spec.get("tile_color") or color)
+	date = spec.get("date") or datetime.date.today().isoformat()
+	designer = spec.get("designer", "")
+	concepts = spec.get("concepts", [])
+	ind = str(spec.get("industry", "")).lower()
+	nav = spec.get("nav") or DEFAULT_NAV.get(ALIASES.get(ind, ind), ["Products", "About", "Contact"])
+	mockups = pick_mockups(spec)
+	deck_title = spec.get("deck_title", "final identity" if final else "identity concepts")
 
-    def foot(i):
-        return f'<div class="foot"><span>{html.escape(brand)} — {html.escape(deck_title)}</span><span>{i}</span></div>'
+	def foot(i):
+		return f'<div class="foot"><span>{html.escape(brand)} — {html.escape(deck_title)}</span><span>{i}</span></div>'
 
-    slides = []
-    custom_title = spec.get("deck_title")
-    cover_mark = ""
-    if final and concepts:
-        c0 = concepts[0]
-        first = c0.get("lockup") or c0.get("symbol") or c0.get("avatar")
-        if first:
-            cover_mark = (f'<div style="position:absolute;right:64px;top:50%;transform:translateY(-50%);width:520px;'
-                          f'height:300px;display:flex;align-items:center;justify-content:center">'
-                          f'<img class="{cls}" src="{uri(first, base)}" style="max-width:100%;max-height:100%"></div>')
-    kicker = (custom_title.capitalize() if (final and custom_title) else "Final identity") if final \
-        else f"Logo design · round {spec.get('round', 1)}"
-    note = ("Concepts are shown in greyscale so the conversation stays on form and idea; colour follows once a "
-            "direction is chosen." if grey and not final else "")
-    slides.append(f"""<section class="slide"><div class="kicker">{kicker}</div>
+	slides = []
+	custom_title = spec.get("deck_title")
+	cover_mark = ""
+	if final and concepts:
+		c0 = concepts[0]
+		first = c0.get("lockup") or c0.get("symbol") or c0.get("avatar")
+		if first:
+			cover_mark = (
+				f'<div style="position:absolute;right:64px;top:50%;transform:translateY(-50%);width:520px;'
+				f'height:300px;display:flex;align-items:center;justify-content:center">'
+				f'<img class="{cls}" src="{uri(first, base)}" style="max-width:100%;max-height:100%"></div>'
+			)
+	kicker = (
+		(custom_title.capitalize() if (final and custom_title) else "Final identity")
+		if final
+		else f"Logo design · round {spec.get('round', 1)}"
+	)
+	note = (
+		"Concepts are shown in greyscale so the conversation stays on form and idea; colour follows once a "
+		"direction is chosen."
+		if grey and not final
+		else ""
+	)
+	slides.append(f"""<section class="slide"><div class="kicker">{kicker}</div>
 <h1>{html.escape(brand)}</h1><p class="idea muted">{html.escape(deck_title.capitalize())}{(' · ' + html.escape(designer)) if designer else ''} · {date}</p>
 {cover_mark}<p class="muted" style="max-width:720px;margin-top:120px">{note}</p>{foot(1)}</section>""")
-    adj = "".join(f"<span>{html.escape(x)}</span>" for x in spec.get("adjectives", []))
-    crit = spec.get("criteria", "Success: distinctive in its category, recognisable at 16 px, works in one colour, "
-                                "and feels like the words above.")
-    slides.append(f"""<section class="slide"><div class="kicker">What we heard</div><h2>The brief</h2>
+	adj = "".join(f"<span>{html.escape(x)}</span>" for x in spec.get("adjectives", []))
+	crit = spec.get(
+		"criteria",
+		"Success: distinctive in its category, recognisable at 16 px, works in one colour, "
+		"and feels like the words above.",
+	)
+	slides.append(f"""<section class="slide"><div class="kicker">What we heard</div><h2>The brief</h2>
 <p class="idea">{html.escape(spec.get('brief', ''))}</p><div class="adj">{adj}</div>
 <p class="muted" style="margin-top:28px;max-width:860px">{html.escape(crit)}</p>{foot(2)}</section>""")
-    items = []
-    for i, c in enumerate(concepts):
-        paths = [c.get("symbol"), c.get("lockup"), c.get("avatar")]
-        if not any(paths):
-            print(f"skip concept {i}: needs symbol, lockup or avatar")
-            continue
-        sym = uri(c.get("symbol") or c.get("avatar") or c.get("lockup"), base)
-        lock = uri(c.get("lockup") or c.get("symbol") or c.get("avatar"), base)
-        av = uri(c.get("avatar") or c.get("symbol") or c.get("lockup"), base)
-        stacked = uri(c["stacked"], base) if c.get("stacked") else None
-        dark = {}
-        if not grey:
-            pick = lambda *keys: next((c[k] for k in keys if c.get(k)), None)
-            if c.get("symbol_on_dark") and not c.get("symbol_on_tile"):
-                print(f"note: concept {chr(65 + i)} has no symbol_on_tile; symbol_on_dark is used on the {tile} tiles "
-                      "(app icon, cards) — check its contrast there, or pass a dedicated tile file")
-            for k, src in (("avatar_tile", pick("symbol_on_tile", "symbol_on_dark")),
-                           ("stack_tile", pick("stacked_on_tile", "lockup_on_tile")),
-                           ("avatar_dark", pick("symbol_on_dark")), ("lock_dark", pick("lockup_on_dark")),
-                           ("stack_dark", pick("stacked_on_dark"))):
-                if src:
-                    dark[k] = uri(src, base)
-        items.append((c, sym, lock))
-        label = spec.get("label") or ((custom_title.capitalize() if custom_title else "Final design") if final
-                                      else f"Concept {chr(65 + i)}")
-        rat = "".join(f"<li>{html.escape(r)}</li>" for r in c.get("rationale", []))
-        sizes = "".join(f'<div><img class="{cls}" src="{av}" style="height:{s}px">{s}px</div>' for s in (16, 24, 32, 64))
-        slides.append(f"""<section class="slide"><div class="kicker">{label}</div><h2>{html.escape(c.get('name', ''))}</h2>
+	items = []
+	for i, c in enumerate(concepts):
+		paths = [c.get("symbol"), c.get("lockup"), c.get("avatar")]
+		if not any(paths):
+			print(f"skip concept {i}: needs symbol, lockup or avatar")
+			continue
+		sym = uri(c.get("symbol") or c.get("avatar") or c.get("lockup"), base)
+		lock = uri(c.get("lockup") or c.get("symbol") or c.get("avatar"), base)
+		av = uri(c.get("avatar") or c.get("symbol") or c.get("lockup"), base)
+		stacked = uri(c["stacked"], base) if c.get("stacked") else None
+		dark = {}
+		if not grey:
+			pick = lambda *keys: next((c[k] for k in keys if c.get(k)), None)
+			if c.get("symbol_on_dark") and not c.get("symbol_on_tile"):
+				print(
+					f"note: concept {chr(65 + i)} has no symbol_on_tile; symbol_on_dark is used on the {tile} tiles "
+					"(app icon, cards) — check its contrast there, or pass a dedicated tile file"
+				)
+			for k, src in (
+				("avatar_tile", pick("symbol_on_tile", "symbol_on_dark")),
+				("stack_tile", pick("stacked_on_tile", "lockup_on_tile")),
+				("avatar_dark", pick("symbol_on_dark")),
+				("lock_dark", pick("lockup_on_dark")),
+				("stack_dark", pick("stacked_on_dark")),
+			):
+				if src:
+					dark[k] = uri(src, base)
+		items.append((c, sym, lock))
+		label = spec.get("label") or (
+			(custom_title.capitalize() if custom_title else "Final design") if final else f"Concept {chr(65 + i)}"
+		)
+		rat = "".join(f"<li>{html.escape(r)}</li>" for r in c.get("rationale", []))
+		sizes = "".join(
+			f'<div><img class="{cls}" src="{av}" style="height:{s}px">{s}px</div>' for s in (16, 24, 32, 64)
+		)
+		slides.append(f"""<section class="slide"><div class="kicker">{label}</div><h2>{html.escape(c.get('name', ''))}</h2>
 <p class="idea">{html.escape(c.get('idea', ''))}</p>
 <div class="hero"><div class="stage"><img class="{cls}" src="{lock}"></div>
 <div><ul class="rat">{rat}</ul><div class="sizes">{sizes}</div><div class="rev"><img class="{'' if (c.get('lockup_on_dark') and not grey) else 'w'}" src="{uri(c['lockup_on_dark'], base) if (c.get('lockup_on_dark') and not grey) else lock}" style="max-height:44px;max-width:300px"></div></div></div>
 {foot(len(slides) + 1)}</section>""")
-        ctx = {"sym": sym, "lock": lock, "avatar": av, "cls": cls, "name": brand, "tag": spec.get("tagline", ""),
-               "tile": tile, "nav": nav, "stacked": stacked, **dark}
-        cells = "".join(mock_html(k, ctx) for k in mockups)
-        slides.append(f"""<section class="slide"><div class="kicker">{label} · in use</div><h2>{html.escape(c.get('name', ''))}</h2>
+		ctx = {
+			"sym": sym,
+			"lock": lock,
+			"avatar": av,
+			"cls": cls,
+			"name": brand,
+			"tag": spec.get("tagline", ""),
+			"tile": tile,
+			"nav": nav,
+			"stacked": stacked,
+			**dark,
+		}
+		cells = "".join(mock_html(k, ctx) for k in mockups)
+		slides.append(f"""<section class="slide"><div class="kicker">{label} · in use</div><h2>{html.escape(c.get('name', ''))}</h2>
 <div class="mock">{cells}</div>{foot(len(slides) + 1)}</section>""")
-    if len(items) > 1:
-        cells = "".join(f'<div class="c"><img class="{cls}" src="{lock}"><img class="{cls}" src="{sym}" style="height:32px">'
-                        f'<b>{chr(65 + i)} · {html.escape(c.get("name", ""))}</b><span class="muted" style="text-align:center">{html.escape(c.get("idea", ""))}</span></div>'
-                        for i, (c, sym, lock) in enumerate(items))
-        slides.append(f"""<section class="slide"><div class="kicker">Side by side</div><h2>{len(items)} directions</h2>
+	if len(items) > 1:
+		cells = "".join(
+			f'<div class="c"><img class="{cls}" src="{lock}"><img class="{cls}" src="{sym}" style="height:32px">'
+			f'<b>{chr(65 + i)} · {html.escape(c.get("name", ""))}</b><span class="muted" style="text-align:center">{html.escape(c.get("idea", ""))}</span></div>'
+			for i, (c, sym, lock) in enumerate(items)
+		)
+		slides.append(f"""<section class="slide"><div class="kicker">Side by side</div><h2>{len(items)} directions</h2>
 <div class="cmp" style="grid-template-columns:repeat({len(items)},1fr)">{cells}</div>{foot(len(slides) + 1)}</section>""")
-    if spec.get("recommendation"):
-        steps = spec.get("next_steps") or ([] if final else ["Choose a direction (or name what you like in each).",
-                                                             "We refine it: geometry, optical corrections, lockups.",
-                                                             "Colour and typography options for the chosen direction.",
-                                                             "Final artwork, variants and mini guidelines."])
-        title = "Notes" if final else "Our recommendation"
-        slides.append(f"""<section class="slide"><div class="kicker">{'Next steps' if final else 'Recommendation & next steps'}</div><h2>{title}</h2>
+	if spec.get("recommendation"):
+		steps = spec.get("next_steps") or (
+			[]
+			if final
+			else [
+				"Choose a direction (or name what you like in each).",
+				"We refine it: geometry, optical corrections, lockups.",
+				"Colour and typography options for the chosen direction.",
+				"Final artwork, variants and mini guidelines.",
+			]
+		)
+		title = "Notes" if final else "Our recommendation"
+		slides.append(f"""<section class="slide"><div class="kicker">{'Next steps' if final else 'Recommendation & next steps'}</div><h2>{title}</h2>
 <p class="idea">{html.escape(spec['recommendation'])}</p>
 <ul class="rat" style="margin-top:30px">{''.join(f'<li>{html.escape(s)}</li>' for s in steps)}</ul>{foot(len(slides) + 1)}</section>""")
-    doc = (f"<!doctype html><html lang='en'><head><meta charset='utf-8'><title>{html.escape(brand)} — {html.escape(deck_title)}</title>"
-           f"<style>{CSS}</style></head><body>{''.join(slides)}</body></html>")
-    with open(a.out, "w", encoding="utf-8") as fh:
-        fh.write(doc)
-    print(f"wrote {a.out} ({len(slides)} slides; mockups: {', '.join(mockups)})")
-    if a.png_dir:
-        import tempfile
-        import render_png
-        os.makedirs(a.png_dir, exist_ok=True)
-        solo_css = CSS + "body{background:#fff}.slide{margin:0;box-shadow:none;min-height:800px}"
-        for i, sl in enumerate(slides, 1):
-            with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as fh:
-                fh.write(f"<!doctype html><html><head><meta charset='utf-8'><style>{solo_css}</style></head><body>{sl}</body></html>")
-                tmp_html = fh.name
-            out = os.path.join(a.png_dir, f"slide-{i:02d}.png")
-            try:
-                render_png.screenshot_html(tmp_html, out, 1280, 800)
-                print("wrote", out)
-            except Exception as exc:
-                print(f"slide PNG export failed ({exc}); open the HTML instead")
-                break
-            finally:
-                os.unlink(tmp_html)
+	doc = (
+		f"<!doctype html><html lang='en'><head><meta charset='utf-8'><title>{html.escape(brand)} — {html.escape(deck_title)}</title>"
+		f"<style>{CSS}</style></head><body>{''.join(slides)}</body></html>"
+	)
+	with open(a.out, "w", encoding="utf-8") as fh:
+		fh.write(doc)
+	print(f"wrote {a.out} ({len(slides)} slides; mockups: {', '.join(mockups)})")
+	if a.png_dir:
+		import tempfile
+		import render_png
+
+		os.makedirs(a.png_dir, exist_ok=True)
+		solo_css = CSS + "body{background:#fff}.slide{margin:0;box-shadow:none;min-height:800px}"
+		for i, sl in enumerate(slides, 1):
+			with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False, encoding="utf-8") as fh:
+				fh.write(
+					f"<!doctype html><html><head><meta charset='utf-8'><style>{solo_css}</style></head><body>{sl}</body></html>"
+				)
+				tmp_html = fh.name
+			out = os.path.join(a.png_dir, f"slide-{i:02d}.png")
+			try:
+				render_png.screenshot_html(tmp_html, out, 1280, 800)
+				print("wrote", out)
+			except Exception as exc:
+				print(f"slide PNG export failed ({exc}); open the HTML instead")
+				break
+			finally:
+				os.unlink(tmp_html)
 
 
 if __name__ == "__main__":
-    main()
+	main()
