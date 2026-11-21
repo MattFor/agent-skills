@@ -1,0 +1,11 @@
+{
+  "name": "mattfor",
+  "owner": { "name": "MattFor" },
+  "plugins": [
+    {
+      "name": "agent-skills",
+      "source": "./",
+      "description": "Agent skills for logo design, orchestrating other coding agents and a CLI project tracker."
+    }
+  ]
+}

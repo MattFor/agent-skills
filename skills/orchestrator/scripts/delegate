@@ -1,0 +1,54 @@
+#!/bin/sh
+# delegate list                         show agents usable on this machine
+# delegate <agent> <dir> [model] < task run one agent headless in <dir>, print only its final message
+set -eu
+state=${XDG_STATE_HOME:-$HOME/.local/state}/orchestrator
+have() { command -v "$1" >/dev/null 2>&1; }
+
+if [ "${1:-}" = list ]; then
+	have codex && echo "codex    $(codex --version 2>/dev/null)"
+	have cursor-agent && echo "cursor   $(cursor-agent status 2>&1 | grep -q "Logged in" && echo logged in || echo not logged in)"
+	have copilot && echo "copilot  $(copilot --version 2>/dev/null | head -1)"
+	have claude && echo "claude   $(claude --version 2>/dev/null)"
+	if have codex && have ollama && ollama list >/dev/null 2>&1; then
+		echo "local    ollama: $(ollama list | awk 'NR>1 && $1 !~ /embed/ {printf "%s ", $1}')"
+	fi
+	exit 0
+fi
+
+[ $# -ge 2 ] || { sed -n '2,3p' "$0" >&2; exit 2; }
+agent=$1 dir=$(cd "$2" && pwd) model=${3:-}
+[ "$dir" != "$HOME" ] && [ "$dir" != / ] || { echo "refusing to run an agent in $dir" >&2; exit 2; }
+mkdir -p "$state"
+base=$state/$(date +%Y%m%d-%H%M%S)-$agent-$$
+cat >"$base.task"
+[ -s "$base.task" ] || { echo "empty task on stdin" >&2; exit 2; }
+cd "$dir"
+t="timeout ${DELEGATE_TIMEOUT:-1800}"
+rc=0
+# No sandbox or approvals for any agent; the orchestrator verifies afterwards.
+case $agent in
+	codex | local)
+		set -- exec --skip-git-repo-check -C "$dir" --dangerously-bypass-approvals-and-sandbox -o "$base.out"
+		[ "$agent" = local ] && set -- "$@" --oss --local-provider ollama -m "${model:-${DELEGATE_LOCAL_MODEL:-qwen3.6:35b-a3b-coding}}"
+		[ "$agent" = codex ] && [ -n "$model" ] && set -- "$@" -m "$model"
+		$t codex "$@" - <"$base.task" >"$base.log" 2>&1 || rc=$? ;;
+	cursor)
+		set -- -p --output-format text --force --trust --workspace "$dir"
+		[ -n "$model" ] && set -- "$@" --model "$model"
+		$t cursor-agent "$@" "$(cat "$base.task")" >"$base.out" 2>"$base.log" || rc=$? ;;
+	copilot)
+		set -- -s --allow-all
+		[ -n "$model" ] && set -- "$@" --model "$model"
+		$t copilot "$@" -p "$(cat "$base.task")" >"$base.out" 2>"$base.log" || rc=$? ;;
+	claude)
+		# CLAUDE_NOTIFY_OFF: lets a notification hook stay quiet for headless runs
+		$t env -u CLAUDECODE CLAUDE_NOTIFY_OFF=1 claude -p --model "${model:-sonnet}" --dangerously-skip-permissions \
+			<"$base.task" >"$base.out" 2>"$base.log" || rc=$? ;;
+	*) echo "unknown agent: $agent (codex cursor copilot claude local)" >&2; exit 2 ;;
+esac
+# Capped so a chatty agent can't flood the orchestrator's context.
+[ -s "$base.out" ] || cp "$base.log" "$base.out"
+tail -c "${DELEGATE_MAX_CHARS:-3000}" "$base.out"
+printf '\n[%s exit=%s log=%s.log]\n' "$agent" "$rc" "$base"
+exit "$rc"
