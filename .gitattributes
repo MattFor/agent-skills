@@ -1,1 +1,4 @@
 * text=auto eol=lf
+
+# Encrypted record of the private skills (git-crypt; key on the PC only).
+/private/** filter=git-crypt diff=git-crypt -text
