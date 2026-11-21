@@ -1,6 +1,6 @@
 {
   "name": "agent-skills",
-  "description": "Agent skills for logo design, orchestrating other coding agents and a CLI project tracker.",
+  "description": "Agent skills for UI verification, releases, dependency updates, disk cleanup, logo design, orchestrating other coding agents and a CLI project tracker.",
   "author": { "name": "MattFor", "url": "https://github.com/MattFor" },
   "repository": "https://github.com/MattFor/agent-skills",
   "license": "MIT"

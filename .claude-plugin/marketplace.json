@@ -5,7 +5,7 @@
     {
       "name": "agent-skills",
       "source": "./",
-      "description": "Agent skills for logo design, orchestrating other coding agents and a CLI project tracker."
+      "description": "Agent skills for UI verification, releases, dependency updates, disk cleanup, logo design, orchestrating other coding agents and a CLI project tracker."
     }
   ]
 }
