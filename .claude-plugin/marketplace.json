@@ -1,6 +1,9 @@
 {
   "name": "mattfor",
-  "owner": { "name": "MattFor" },
+  "description": "Agent skills for UI verification, releases, dependency updates, disk cleanup, logo design, orchestrating other coding agents and a CLI project tracker.",
+  "owner": {
+    "name": "MattFor"
+  },
   "plugins": [
     {
       "name": "agent-skills",
