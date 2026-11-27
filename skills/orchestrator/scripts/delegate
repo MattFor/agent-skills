@@ -54,10 +54,10 @@ case $agent in
         $t copilot "$@" -p "$(cat "$base.task")" >"$base.out" 2>"$base.log" || rc=$?
         ;;
     claude)
-        # Optional Console API key lets headless runs use monthly API credits instead of the Max plan.
-        api_key=${DELEGATE_CLAUDE_API_KEY:-}
+        # Use ANTHROPIC_API_KEY (env or ~/.config/secrets/env) so headless runs bill Console API credits.
+        api_key=${ANTHROPIC_API_KEY:-}
         if [ -z "$api_key" ] && [ -r "$HOME/.config/secrets/env" ]; then
-            api_key=$(awk -F= '/^(export[[:space:]]+)?CLAUDE_DELEGATE_API_KEY=/{v=$2; gsub(/^[[:space:]"'"'"']+|[[:space:]"'"'"']+$/, "", v); print v; exit}' "$HOME/.config/secrets/env")
+            api_key=$(awk '/^(export[[:space:]]+)?ANTHROPIC_API_KEY=/{sub(/^[^=]*=/, ""); gsub(/^[[:space:]"'"'"']+|[[:space:]"'"'"']+$/, ""); print; exit}' "$HOME/.config/secrets/env")
         fi
         # CLAUDE_NOTIFY_OFF: lets a notification hook stay quiet for headless runs
         if [ -n "$api_key" ]; then
