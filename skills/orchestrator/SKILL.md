@@ -19,8 +19,9 @@ Suggested roles:
 
 - **codex / cursor / copilot**: real implementation work. Spread tasks across them so
   no single subscription carries everything.
-- **claude**: headless Claude Code (Sonnet by default). Good at reviews and tests; it bills
-  the user's Claude plan, so use it after the others.
+- **claude**: headless Claude Code (Sonnet by default). Good at reviews and tests; set
+  `DELEGATE_CLAUDE_API_KEY` (or `CLAUDE_DELEGATE_API_KEY` in `~/.config/secrets/env`) to bill
+  Console API credits instead of the Max plan.
 - **local**: free but weak. It often describes a fix instead of applying it. Give it
   small, mechanical tasks only, and always check that a diff exists.
 

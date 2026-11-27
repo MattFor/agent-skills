@@ -54,9 +54,21 @@ case $agent in
         $t copilot "$@" -p "$(cat "$base.task")" >"$base.out" 2>"$base.log" || rc=$?
         ;;
     claude)
+        # Optional Console API key lets headless runs use monthly API credits instead of the Max plan.
+        api_key=${DELEGATE_CLAUDE_API_KEY:-}
+        if [ -z "$api_key" ] && [ -r "$HOME/.config/secrets/env" ]; then
+            api_key=$(awk -F= '/^(export[[:space:]]+)?CLAUDE_DELEGATE_API_KEY=/{v=$2; gsub(/^[[:space:]"'"'"']+|[[:space:]"'"'"']+$/, "", v); print v; exit}' "$HOME/.config/secrets/env")
+        fi
         # CLAUDE_NOTIFY_OFF: lets a notification hook stay quiet for headless runs
-        $t env -u CLAUDECODE CLAUDE_NOTIFY_OFF=1 claude -p --model "${model:-sonnet}" --dangerously-skip-permissions \
-            <"$base.task" >"$base.out" 2>"$base.log" || rc=$?
+        if [ -n "$api_key" ]; then
+            $t env -u CLAUDECODE -u ANTHROPIC_AUTH_TOKEN -u CLAUDE_CODE_OAUTH_TOKEN \
+                ANTHROPIC_API_KEY="$api_key" CLAUDE_NOTIFY_OFF=1 \
+                claude -p --model "${model:-sonnet}" --dangerously-skip-permissions \
+                <"$base.task" >"$base.out" 2>"$base.log" || rc=$?
+        else
+            $t env -u CLAUDECODE CLAUDE_NOTIFY_OFF=1 claude -p --model "${model:-sonnet}" --dangerously-skip-permissions \
+                <"$base.task" >"$base.out" 2>"$base.log" || rc=$?
+        fi
         ;;
     *)
         echo "unknown agent: $agent (codex cursor copilot claude local)" >&2
